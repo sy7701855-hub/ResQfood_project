@@ -1,0 +1,158 @@
+/* Modern Culinary Food App Theme for ResQFood */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Outfit:wght@500;600;700;800&display=swap');
+
+:root {
+  --font-display: 'Outfit', sans-serif;
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f8fafc;
+}
+
+h1, h2, h3, .font-heading {
+  font-family: var(--font-display);
+}
+
+#map {
+  height: 580px;
+  width: 100%;
+  border-radius: 1.25rem;
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+/* Food Card Hover & Image Zoom */
+.food-card {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.food-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+}
+
+.food-img-wrapper {
+  overflow: hidden;
+  position: relative;
+}
+
+.food-img {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.food-card:hover .food-img {
+  transform: scale(1.06);
+}
+
+/* Modern Veg / Non-Veg Indicator Symbol */
+.veg-icon {
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid #16a34a;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+}
+.veg-icon .dot {
+  width: 7px;
+  height: 7px;
+  background: #16a34a;
+  border-radius: 50%;
+}
+
+.non-veg-icon {
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid #dc2626;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+}
+.non-veg-icon .dot {
+  width: 7px;
+  height: 7px;
+  background: #dc2626;
+  border-radius: 50%;
+}
+
+/* Sleek Vector Map Pin Styles */
+.custom-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  color: white;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+  border: 2.5px solid white;
+  transition: transform 0.2s ease;
+}
+
+.custom-pin svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.2;
+}
+
+.custom-pin:hover {
+  transform: scale(1.15);
+}
+
+.pin-cooked { background: linear-gradient(135deg, #ea580c, #c2410c); }
+.pin-baked { background: linear-gradient(135deg, #d97706, #b45309); }
+.pin-groceries { background: linear-gradient(135deg, #16a34a, #15803d); }
+.pin-beverages { background: linear-gradient(135deg, #0284c7, #0369a1); }
+.pin-packaged { background: linear-gradient(135deg, #4f46e5, #4338ca); }
+
+/* Glassmorphism Navigation */
+.nav-glass {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Category Quick-Filter Pills */
+.filter-chip {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.filter-chip.active {
+  background-color: #15803d;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+  border-color: #15803d;
+}
+
+/* Pulse animation */
+@keyframes soft-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.25); }
+}
+
+.pulse-badge {
+  animation: soft-pulse 2s infinite ease-in-out;
+}
+
+/* Preset Food Images in Form */
+.preset-thumb {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.preset-thumb:hover {
+  transform: scale(1.05);
+  border-color: #22c55e;
+}
+
+.preset-thumb.selected {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 2px #dcfce7;
+}

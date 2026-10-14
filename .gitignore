@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+public/node_modules/
+
+# Environment variables (NEVER upload this)
+.env
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp folders
+temp_chrome/
+temp/
+
+# IDE
+.vscode/
+.idea/

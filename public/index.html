@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResQFood — Discover & Rescue Fresh Surplus Food</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- TOP HEADER / NAVBAR -->
+  <header class="nav-glass border-b border-slate-200/80 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 sm:h-20">
+        
+        <!-- Brand Logo -->
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('explore')">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-700 to-emerald-500 flex items-center justify-center text-white shadow-lg shadow-brand-600/25">
+            <i data-lucide="utensils" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <div class="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-1 font-heading">
+              ResQ<span class="text-brand-600">Food</span>
+            </div>
+            <div class="hidden sm:block text-[11px] text-slate-500 font-bold tracking-wider">
+              SURPLUS FOOD REDISTRIBUTION NETWORK
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Network & Quick Actions -->
+        <div class="flex items-center space-x-3">
+          
+          <!-- Live Real-Time Badge -->
+          <div class="hidden lg:flex items-center space-x-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-full text-xs text-emerald-800 font-semibold">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-badge"></span>
+            <span>Live Mesh Network</span>
+          </div>
+
+          <!-- Instant Demo Seed Button -->
+          <button id="seedDataBtn" onclick="seedDemoData()" class="text-xs bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 px-3.5 py-2 rounded-xl flex items-center gap-1.5 font-bold transition shadow-xs">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-600"></i>
+            <span>Load Gourmet Dishes</span>
+          </button>
+
+          <!-- Auth Buttons (Logged Out) -->
+          <div id="authActions" class="flex items-center space-x-2">
+            <button onclick="openAuthModal('login')" class="text-sm font-bold text-slate-700 hover:text-slate-900 px-3.5 py-2 rounded-xl hover:bg-slate-100 transition">
+              Log In
+            </button>
+            <button onclick="openAuthModal('register')" class="text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 px-4 py-2 rounded-xl shadow-md shadow-brand-600/20 transition">
+              Sign Up
+            </button>
+          </div>
+
+          <!-- User Menu (Logged In) -->
+          <div id="userProfile" class="hidden flex items-center space-x-3 pl-2 border-l border-slate-200">
+            <div class="text-right hidden sm:block">
+              <div id="userName" class="text-sm font-bold text-slate-900">User</div>
+              <div id="userRoleBadge" class="text-[10px] font-extrabold text-brand-700 uppercase tracking-wider bg-brand-100 px-2 py-0.5 rounded-full inline-block">CLAIMER</div>
+            </div>
+            <button onclick="logout()" class="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition" title="Log Out">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs Bar -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-100">
+      <nav class="flex space-x-1 sm:space-x-8 overflow-x-auto py-2">
+        <button onclick="switchTab('explore')" id="tab-explore" class="tab-btn active text-sm font-bold text-brand-700 border-b-2 border-brand-600 pb-2.5 px-2 flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="compass" class="w-4 h-4"></i>
+          Explore Dishes & Map
+        </button>
+        <button onclick="switchTab('donate')" id="tab-donate" class="tab-btn text-sm font-semibold text-slate-500 hover:text-slate-900 pb-2.5 px-2 flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          Post Surplus Food
+        </button>
+        <button onclick="switchTab('claims')" id="tab-claims" class="tab-btn text-sm font-semibold text-slate-500 hover:text-slate-900 pb-2.5 px-2 flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="ticket" class="w-4 h-4"></i>
+          My Pickups & Handshake
+        </button>
+        <button onclick="switchTab('impact')" id="tab-impact" class="tab-btn text-sm font-semibold text-slate-500 hover:text-slate-900 pb-2.5 px-2 flex items-center gap-2 whitespace-nowrap">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+          Community Impact
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO SECTION: CULINARY FOOD APP VIBE -->
+  <section class="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white py-8 sm:py-12 relative overflow-hidden">
+    <div class="absolute -top-24 -left-24 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div class="max-w-3xl space-y-3">
+        <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs text-emerald-300 font-bold border border-white/10">
+          <i data-lucide="flame" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>Save Delicious Food • Prevent Landfill Waste</span>
+        </div>
+        <h1 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight font-heading">
+          Rescue Fresh Food from Top Bakeries & Kitchens.
+        </h1>
+        <p class="text-slate-300 text-sm sm:text-base font-normal max-w-2xl">
+          Gourmet meals, artisan breads, and fresh groceries from local businesses that would otherwise be discarded at the end of the day. 100% free for our community.
+        </p>
+      </div>
+
+      <!-- Live Sustainability Ticker -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8 pt-6 border-t border-white/10">
+        <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-3 text-center">
+          <div id="statMeals" class="text-xl sm:text-2xl font-black text-emerald-400">142+</div>
+          <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Meals Rescued</div>
+        </div>
+        <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-3 text-center">
+          <div id="statKg" class="text-xl sm:text-2xl font-black text-amber-400">65 kg</div>
+          <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Food Diverted</div>
+        </div>
+        <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-3 text-center">
+          <div id="statCo2" class="text-xl sm:text-2xl font-black text-teal-400">163 kg</div>
+          <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">CO₂e Prevented</div>
+        </div>
+        <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-3 text-center">
+          <div id="statActive" class="text-xl sm:text-2xl font-black text-white">6</div>
+          <div class="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Active Dishes Nearby</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ============================================== -->
+    <!-- TAB 1: EXPLORE & INTERACTIVE FOOD GRID         -->
+    <!-- ============================================== -->
+    <div id="view-explore" class="tab-content space-y-6">
+      
+      <!-- Interactive Filter & Search Bar -->
+      <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+        
+        <!-- Top Row: Search + Distance + Veg Filter -->
+        <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          
+          <!-- Search Input -->
+          <div class="relative flex-1">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+            <input type="text" id="searchInput" oninput="renderListings()" placeholder="Search croissants, biryani, pizzas, organic fruit..." class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium">
+          </div>
+
+          <!-- Quick Filters: Distance & Veg Only Toggle -->
+          <div class="flex items-center gap-2 overflow-x-auto">
+            
+            <!-- Veg Only Toggle -->
+            <button id="vegOnlyToggle" onclick="toggleVegOnly()" class="px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition flex items-center gap-1.5 whitespace-nowrap">
+              <span class="veg-icon"><span class="dot"></span></span>
+              <span>Vegetarian Only</span>
+            </button>
+
+            <!-- Locate Me -->
+            <button onclick="locateUserPosition()" class="px-3.5 py-2 rounded-xl text-xs font-bold border border-brand-200 bg-brand-50 hover:bg-brand-100 text-brand-800 transition flex items-center gap-1.5 whitespace-nowrap">
+              <i data-lucide="crosshair" class="w-3.5 h-3.5 text-brand-600"></i>
+              <span>Locate Me</span>
+            </button>
+
+            <!-- Layout View Switcher -->
+            <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+              <button onclick="setLayoutView('split')" id="btnViewSplit" class="px-2.5 py-1 rounded-lg bg-white text-slate-900 shadow-xs flex items-center gap-1.5" title="Split View">
+                <i data-lucide="columns-2" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">Split</span>
+              </button>
+              <button onclick="setLayoutView('grid')" id="btnViewGrid" class="px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-900 flex items-center gap-1.5" title="Grid Only">
+                <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">Dishes</span>
+              </button>
+              <button onclick="setLayoutView('map')" id="btnViewMap" class="px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-900 flex items-center gap-1.5" title="Map Only">
+                <i data-lucide="map" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">Map</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Clean Vector Category Filter Pills -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1" id="categoryFilters">
+          <button onclick="setCategoryFilter('ALL')" class="filter-chip active px-4 py-2 rounded-xl text-xs font-bold bg-brand-700 text-white border border-brand-700 transition flex items-center gap-2 whitespace-nowrap">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span>All Dishes</span>
+          </button>
+          <button onclick="setCategoryFilter('BAKED_GOODS')" class="filter-chip px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-transparent transition flex items-center gap-2 whitespace-nowrap">
+            <i data-lucide="cake" class="w-3.5 h-3.5 text-amber-600"></i>
+            <span>Bakery & Pastries</span>
+          </button>
+          <button onclick="setCategoryFilter('COOKED_MEALS')" class="filter-chip px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-transparent transition flex items-center gap-2 whitespace-nowrap">
+            <i data-lucide="cooking-pot" class="w-3.5 h-3.5 text-orange-600"></i>
+            <span>Hot Meals & Curries</span>
+          </button>
+          <button onclick="setCategoryFilter('GROCERIES')" class="filter-chip px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-transparent transition flex items-center gap-2 whitespace-nowrap">
+            <i data-lucide="apple" class="w-3.5 h-3.5 text-emerald-600"></i>
+            <span>Fresh Farm Produce</span>
+          </button>
+          <button onclick="setCategoryFilter('BEVERAGES')" class="filter-chip px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-transparent transition flex items-center gap-2 whitespace-nowrap">
+            <i data-lucide="cup-soda" class="w-3.5 h-3.5 text-sky-600"></i>
+            <span>Cold-Pressed Juices</span>
+          </button>
+          <button onclick="setCategoryFilter('PACKAGED')" class="filter-chip px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-transparent transition flex items-center gap-2 whitespace-nowrap">
+            <i data-lucide="package" class="w-3.5 h-3.5 text-indigo-600"></i>
+            <span>Packaged Goods</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- MAIN CONTENT AREA (DYNAMIC SPLIT / GRID / MAP) -->
+      <div id="layoutContainer" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Interactive Leaflet Map Container -->
+        <div id="mapWrapper" class="lg:col-span-5 bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 space-y-2 sticky top-24">
+          <div class="flex items-center justify-between px-2 pt-1">
+            <span class="text-xs font-extrabold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="map-pin" class="w-4 h-4 text-brand-600"></i>
+              Live Food Pins Near You
+            </span>
+            <span class="text-[11px] text-slate-400 font-medium">Click pins for details</span>
+          </div>
+          <div id="map"></div>
+        </div>
+
+        <!-- Food Listings Feed (Cards Grid) -->
+        <div id="cardsWrapper" class="lg:col-span-7 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-black text-slate-900 flex items-center gap-2 font-heading">
+              <span>Available Food Rescues</span>
+              <span id="listingCountBadge" class="bg-brand-100 text-brand-800 text-xs px-2.5 py-0.5 rounded-full font-extrabold">0</span>
+            </h2>
+            <button onclick="fetchListings()" class="text-xs font-bold text-slate-500 hover:text-brand-600 flex items-center gap-1.5 transition">
+              <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i> Refresh Feed
+            </button>
+          </div>
+
+          <!-- Dynamic Cards Grid -->
+          <div id="listingsFeed" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 2: POST SURPLUS FOOD (DONOR HUB)           -->
+    <!-- ============================================== -->
+    <div id="view-donate" class="tab-content hidden max-w-3xl mx-auto space-y-6">
+      
+      <div class="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6">
+        <div class="border-b border-slate-100 pb-4">
+          <h2 class="text-2xl font-black text-slate-900 flex items-center gap-2 font-heading">
+            <i data-lucide="heart-handshake" class="w-7 h-7 text-brand-600"></i>
+            Post Food for Community Rescue
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            Don't throw away edible surplus. Share fresh bakery batches, catering pans, and produce with nearby verified volunteers.
+          </p>
+        </div>
+
+        <!-- 1-Click Preset Food Gallery -->
+        <div class="space-y-2">
+          <div class="flex items-center gap-1.5 text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+            <i data-lucide="wand-2" class="w-3.5 h-3.5 text-brand-600"></i>
+            <span>Quick Presets (Click to auto-populate):</span>
+          </div>
+          <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            <div onclick="selectPreset('croissant')" class="preset-thumb bg-slate-50 rounded-xl p-1.5 text-center border border-slate-200">
+              <img src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=300&q=80" class="w-full h-14 object-cover rounded-lg mb-1">
+              <span class="text-[10px] font-bold text-slate-700 block truncate">Bakery Box</span>
+            </div>
+            <div onclick="selectPreset('biryani')" class="preset-thumb bg-slate-50 rounded-xl p-1.5 text-center border border-slate-200">
+              <img src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=300&q=80" class="w-full h-14 object-cover rounded-lg mb-1">
+              <span class="text-[10px] font-bold text-slate-700 block truncate">Hot Biryani</span>
+            </div>
+            <div onclick="selectPreset('sandwich')" class="preset-thumb bg-slate-50 rounded-xl p-1.5 text-center border border-slate-200">
+              <img src="https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=300&q=80" class="w-full h-14 object-cover rounded-lg mb-1">
+              <span class="text-[10px] font-bold text-slate-700 block truncate">Sandwiches</span>
+            </div>
+            <div onclick="selectPreset('pizza')" class="preset-thumb bg-slate-50 rounded-xl p-1.5 text-center border border-slate-200">
+              <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=300&q=80" class="w-full h-14 object-cover rounded-lg mb-1">
+              <span class="text-[10px] font-bold text-slate-700 block truncate">Pizzas</span>
+            </div>
+            <div onclick="selectPreset('fruits')" class="preset-thumb bg-slate-50 rounded-xl p-1.5 text-center border border-slate-200">
+              <img src="https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=300&q=80" class="w-full h-14 object-cover rounded-lg mb-1">
+              <span class="text-[10px] font-bold text-slate-700 block truncate">Farm Fruits</span>
+            </div>
+            <div onclick="selectPreset('juice')" class="preset-thumb bg-slate-50 rounded-xl p-1.5 text-center border border-slate-200">
+              <img src="https://images.unsplash.com/photo-1622597467836-f3285f2131b8?auto=format&fit=crop&w=300&q=80" class="w-full h-14 object-cover rounded-lg mb-1">
+              <span class="text-[10px] font-bold text-slate-700 block truncate">Raw Juices</span>
+            </div>
+          </div>
+        </div>
+
+        <form id="postFoodForm" onsubmit="handlePostFood(event)" class="space-y-4 pt-2">
+          
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Dish / Item Title *</label>
+            <input type="text" id="postTitle" required placeholder="e.g. 20 Boxes of Fresh Butter Croissants & Almond Rolls" class="w-full px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none font-medium">
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Category *</label>
+              <select id="postCategory" class="w-full px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none font-medium">
+                <option value="BAKED_GOODS">Bakery & Pastries</option>
+                <option value="COOKED_MEALS">Cooked Hot Meals & Curries</option>
+                <option value="GROCERIES">Fresh Produce & Groceries</option>
+                <option value="BEVERAGES">Fresh Juices & Smoothies</option>
+                <option value="PACKAGED">Packaged & Canned Goods</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Quantity & Unit *</label>
+              <div class="flex space-x-2">
+                <input type="number" id="postQuantityAmount" required min="1" value="15" class="w-1/2 px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none font-bold">
+                <select id="postQuantityUnit" class="w-1/2 px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none font-medium">
+                  <option value="PORTIONS">Portions / Meals</option>
+                  <option value="KG">Kilograms (Kg)</option>
+                  <option value="PACKETS">Boxes / Packs</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Available For (Hours) *</label>
+              <select id="postExpiresIn" class="w-full px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none font-medium">
+                <option value="1.5">1.5 Hours (Urgent Rescue)</option>
+                <option value="3" selected>3 Hours (Standard Bakery/Lunch)</option>
+                <option value="6">6 Hours (Evening Window)</option>
+                <option value="12">12 Hours</option>
+                <option value="24">24 Hours</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Dietary Tag</label>
+              <select id="postDietary" class="w-full px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none font-medium">
+                <option value="VEGETARIAN">Vegetarian (100% Veg)</option>
+                <option value="VEGAN">Vegan (Plant Based)</option>
+                <option value="HALAL">Halal Certified</option>
+                <option value="GLUTEN_FREE">Gluten Free</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Pickup Address & Instructions *</label>
+            <input type="text" id="postPickupAddress" required placeholder="e.g. 100ft Road Indiranagar (Ask at main bakery counter)" class="w-full px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none font-medium">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Food Photo URL (Auto-filled or Custom)</label>
+            <input type="url" id="postImageUrl" placeholder="https://images.unsplash.com/..." class="w-full px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none font-mono text-xs">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Description & Handling Notes</label>
+            <textarea id="postDescription" rows="2" placeholder="e.g. Freshly packed in clean cardboard containers. Please bring a carry bag." class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none font-medium"></textarea>
+          </div>
+
+          <button type="submit" class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-brand-600/25 transition flex items-center justify-center gap-2">
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
+            Publish Food Rescue
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 3: MY PICKUPS & HANDSHAKE OTP              -->
+    <!-- ============================================== -->
+    <div id="view-claims" class="tab-content hidden max-w-4xl mx-auto space-y-6">
+      
+      <!-- Donor Verification Tool -->
+      <div class="bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white p-6 sm:p-8 rounded-3xl shadow-xl border border-white/10 space-y-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-brand-500 text-slate-950 flex items-center justify-center font-black">
+            <i data-lucide="shield-check" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-base sm:text-lg font-heading">Donor Custody Verification</h3>
+            <p class="text-xs text-slate-400">Claimer is at your counter? Type their 6-digit OTP code to complete the rescue handshake.</p>
+          </div>
+        </div>
+
+        <form onsubmit="handleVerifyOTP(event)" class="flex flex-col sm:flex-row gap-3 pt-2">
+          <input type="text" id="verifyOtpInput" maxlength="6" required placeholder="Enter 6-digit OTP (e.g. 812134)" class="w-full sm:w-72 px-4 py-3 text-center text-xl font-mono tracking-widest bg-slate-800/80 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 font-black">
+          <button type="submit" class="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-slate-950 font-black text-sm rounded-xl shadow-lg shadow-brand-500/20 transition flex items-center justify-center gap-2">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            Verify & Complete Handshake
+          </button>
+        </form>
+      </div>
+
+      <!-- User Active Reservations -->
+      <div class="space-y-4">
+        <h3 class="text-lg font-black text-slate-900 flex items-center gap-2 font-heading">
+          <i data-lucide="ticket" class="w-5 h-5 text-brand-600"></i>
+          Your Active Claim Passes
+        </h3>
+
+        <div id="myClaimsFeed" class="space-y-3">
+          <div class="text-center py-12 text-slate-400 bg-white rounded-3xl border border-slate-200">
+            <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 text-slate-300"></i>
+            <p class="text-sm font-semibold">No active pickups right now.</p>
+            <p class="text-xs text-brand-600 font-bold cursor-pointer mt-1" onclick="switchTab('explore')">Explore available food dishes →</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 4: COMMUNITY IMPACT                        -->
+    <!-- ============================================== -->
+    <div id="view-impact" class="tab-content hidden max-w-4xl mx-auto space-y-6">
+      
+      <div class="bg-white p-8 sm:p-12 rounded-3xl shadow-sm border border-slate-200 text-center space-y-6">
+        <div class="w-20 h-20 bg-brand-50 text-brand-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
+          <i data-lucide="award" class="w-10 h-10"></i>
+        </div>
+        <div class="space-y-2">
+          <h2 class="text-3xl font-black text-slate-900 font-heading">Our Collective Environmental Impact</h2>
+          <p class="text-sm text-slate-500 max-w-xl mx-auto">
+            Food rescue is one of the single most effective climate solutions. Every meal saved diverts organic waste from landfills and prevents harmful methane emissions.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+          <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
+            <i data-lucide="utensils" class="w-7 h-7 text-brand-600 mx-auto"></i>
+            <div id="impactDetailMeals" class="text-4xl font-black text-slate-900 font-heading">142</div>
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Meals Provided</div>
+          </div>
+          <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
+            <i data-lucide="scale" class="w-7 h-7 text-amber-600 mx-auto"></i>
+            <div id="impactDetailKg" class="text-4xl font-black text-slate-900 font-heading">65 kg</div>
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Food Kept from Landfills</div>
+          </div>
+          <div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
+            <i data-lucide="cloud-off" class="w-7 h-7 text-emerald-600 mx-auto"></i>
+            <div id="impactDetailCo2" class="text-4xl font-black text-slate-900 font-heading">163 kg</div>
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">CO₂e Emissions Cut</div>
+          </div>
+        </div>
+
+        <div class="pt-6 border-t border-slate-100 text-xs text-slate-400">
+          Calculations certified using United Nations Food and Agriculture Organization (FAO) carbon displacement methodology.
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ============================================== -->
+  <!-- MODAL: AUTHENTICATION (LOGIN / REGISTER)       -->
+  <!-- ============================================== -->
+  <div id="authModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 space-y-5 relative">
+      <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="text-center space-y-1">
+        <h3 id="authModalTitle" class="text-2xl font-black text-slate-900 font-heading">Log In to ResQFood</h3>
+        <p class="text-xs text-slate-500">Access surplus meals or post donations across your neighborhood</p>
+      </div>
+
+      <!-- Quick 1-Click Fast Logins -->
+      <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-center space-y-2">
+        <span class="text-[11px] font-black text-slate-500 uppercase tracking-wider">1-Click Fast Demo Accounts:</span>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="quickLogin('bakery@example.com', 'password123')" class="px-2.5 py-2 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 shadow-xs transition flex items-center justify-center gap-1.5">
+            <i data-lucide="store" class="w-3.5 h-3.5 text-amber-600"></i>
+            <span>Bakery Donor</span>
+          </button>
+          <button onclick="quickLogin('volunteer@example.com', 'password123')" class="px-2.5 py-2 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 shadow-xs transition flex items-center justify-center gap-1.5">
+            <i data-lucide="heart" class="w-3.5 h-3.5 text-emerald-600"></i>
+            <span>Volunteer</span>
+          </button>
+        </div>
+      </div>
+
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-3.5">
+        <div id="nameFieldContainer" class="hidden">
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Full Name</label>
+          <input type="text" id="authName" placeholder="e.g. Maria Volunteer" class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none font-medium">
+        </div>
+
+        <div id="roleFieldContainer" class="hidden">
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Account Role</label>
+          <select id="authRole" class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none font-medium">
+            <option value="CLAIMER">Volunteer / Individual Claimer</option>
+            <option value="DONOR">Food Business / Donor (Bakery/Restaurant)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Email Address</label>
+          <input type="email" id="authEmail" required placeholder="you@domain.com" class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none font-medium">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Password</label>
+          <input type="password" id="authPassword" required placeholder="••••••••" class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none font-medium">
+        </div>
+
+        <button type="submit" id="authSubmitBtn" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-sm rounded-xl shadow-md transition">
+          Log In
+        </button>
+      </form>
+
+      <div class="text-center pt-2">
+        <button id="toggleAuthModeBtn" onclick="toggleAuthMode()" class="text-xs text-brand-600 hover:underline font-bold">
+          Don't have an account? Sign Up Free
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: CLAIM SUCCESS / OTP PASS                -->
+  <!-- ============================================== -->
+  <div id="claimModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 sm:p-8 text-center space-y-4 relative">
+      <button onclick="closeClaimModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
+        <i data-lucide="party-popper" class="w-8 h-8"></i>
+      </div>
+
+      <div class="space-y-1">
+        <h3 class="text-xl font-black text-slate-900 font-heading">Food Rescue Reserved!</h3>
+        <p class="text-xs text-slate-500 font-medium" id="claimModalListingTitle">Delicious surplus food</p>
+      </div>
+
+      <!-- OTP Pass Card -->
+      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-1">
+        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Your 6-Digit Pickup OTP</span>
+        <div id="claimModalOtp" class="text-3xl font-black font-mono text-brand-700 tracking-widest">
+          ------
+        </div>
+        <p class="text-[11px] text-slate-400">Present this verification code at the store counter</p>
+      </div>
+
+      <div class="text-left bg-emerald-50/70 border border-emerald-200 rounded-xl p-3 text-xs space-y-1">
+        <div class="font-bold text-emerald-950 flex items-center gap-1.5">
+          <i data-lucide="map-pin" class="w-3.5 h-3.5 text-emerald-600"></i>
+          Pickup Location:
+        </div>
+        <div id="claimModalAddress" class="text-emerald-800 font-medium">100ft Road, Indiranagar</div>
+      </div>
+
+      <button onclick="closeClaimModal(); switchTab('claims');" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-sm rounded-xl shadow-md transition">
+        View Active Pickup Passes
+      </button>
+    </div>
+  </div>
+
+  <!-- FLOATING TOAST NOTIFICATIONS CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2 font-bold text-slate-800">
+        <i data-lucide="utensils" class="w-4 h-4 text-brand-600"></i>
+        <span>ResQFood</span>
+        <span class="text-slate-400 font-normal">• Empowering zero food waste and zero hunger</span>
+      </div>
+      <div class="flex items-center gap-4 text-slate-500 font-medium">
+        <span>Open Source Platform</span>
+        <span>•</span>
+        <span>UN FAO Carbon Standard</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Socket.io Client -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- App Frontend JavaScript -->
+  <script src="js/app.js"></script>
+</body>
+</html>
