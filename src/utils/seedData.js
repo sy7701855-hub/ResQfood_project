@@ -5,9 +5,15 @@ const seedData = async () => {
   try {
     console.log('🌱 Seeding rich culinary demo food listings...');
 
-    // Clear existing test data
-    await FoodListing.deleteMany({});
-    await User.deleteMany({});
+    // Delete ONLY demo accounts so real registered users are never wiped out
+    const demoEmails = [
+      'bakery@example.com',
+      'caterer@example.com',
+      'cafe@example.com',
+      'volunteer@example.com',
+      'admin@resqfood.com'
+    ];
+    await User.deleteMany({ email: { $in: demoEmails } });
 
     // 1. Create Demo Donor (Bakery)
     const donorUser = await User.create({

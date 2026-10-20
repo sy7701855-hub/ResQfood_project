@@ -807,13 +807,24 @@ async function seedDemoData() {
 // ==============================================================================
 // 10. Authentication & Profile
 // ==============================================================================
-function loadStoredAuth() {
+async function loadStoredAuth() {
   const token = localStorage.getItem('resq_token');
   const user = localStorage.getItem('resq_user');
   if (token && user) {
     currentToken = token;
     currentUser = JSON.parse(user);
     updateAuthUI();
+
+    // Verify token matches current database session (handles in-memory DB restarts)
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!data.success) {
+        logout();
+      }
+    } catch (e) {}
   }
 }
 

@@ -85,6 +85,20 @@ const startServer = async () => {
     await connectDB();
     initCronJobs(io);
 
+    // Seed demo accounts only if database is brand new
+    const User = require('./models/User');
+    const userCount = await User.countDocuments();
+    if (userCount === 0) {
+      try {
+        await seedData();
+        console.log('✅ Initial demo accounts & listings auto-seeded!');
+      } catch (seedErr) {
+        console.log('💡 Database already seeded or ready.');
+      }
+    } else {
+      console.log(`📦 Database ready with ${userCount} existing registered accounts.`);
+    }
+
     server.listen(PORT, () => {
       console.log(`===============================================`);
       console.log(`🚀 ResQFood Server Running on: http://localhost:${PORT}`);

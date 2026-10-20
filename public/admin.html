@@ -38,10 +38,23 @@
         </div>
       </div>
       <div id="loginError" class="hidden mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"></div>
-      <input id="adminEmail" type="email" placeholder="Admin Email" class="w-full border border-slate-200 rounded-xl px-4 py-3 mb-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
-      <input id="adminPassword" type="password" placeholder="Password" class="w-full border border-slate-200 rounded-xl px-4 py-3 mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
-      <button onclick="adminLogin()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition">Login as Admin</button>
-      <p class="text-center text-xs text-slate-400 mt-4"><a href="/" class="hover:text-green-600">← Back to main app</a></p>
+      
+      <!-- Demo Helper Box -->
+      <div class="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900">
+        <div class="font-bold flex items-center gap-1.5 mb-1.5 text-emerald-800">
+          <i data-lucide="key" class="w-3.5 h-3.5 text-emerald-600"></i>
+          <span>Default Admin Credentials:</span>
+        </div>
+        <div class="space-y-0.5 font-mono text-[11px] text-slate-700">
+          <div>Email: <strong class="text-emerald-800">admin@resqfood.com</strong></div>
+          <div>Pass: <strong class="text-emerald-800">admin123</strong></div>
+        </div>
+      </div>
+
+      <input id="adminEmail" type="email" value="admin@resqfood.com" placeholder="Admin Email" class="w-full border border-slate-200 rounded-xl px-4 py-3 mb-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 font-medium">
+      <input id="adminPassword" type="password" value="admin123" placeholder="Password" class="w-full border border-slate-200 rounded-xl px-4 py-3 mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 font-medium">
+      <button onclick="adminLogin()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition shadow-md shadow-green-600/20">Login as Admin</button>
+      <p class="text-center text-xs text-slate-400 mt-4"><a href="/" class="hover:text-green-600 font-bold">← Back to Main ResQFood App</a></p>
     </div>
   </div>
 
@@ -185,12 +198,26 @@
       const errEl = document.getElementById('loginError');
       errEl.classList.add('hidden');
       try {
-        const res = await fetch('/api/auth/login', {
+        let res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
-        const data = await res.json();
+        let data = await res.json();
+
+        // If credentials not found and attempting default demo admin, auto-seed DB and retry
+        if (!data.success && email === 'admin@resqfood.com') {
+          try {
+            await fetch('/api/seed', { method: 'POST' });
+            res = await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password })
+            });
+            data = await res.json();
+          } catch (seedErr) {}
+        }
+
         if (!data.success) { errEl.textContent = data.message; errEl.classList.remove('hidden'); return; }
         if (data.user.role !== 'ADMIN') { errEl.textContent = 'Access denied. Admin accounts only.'; errEl.classList.remove('hidden'); return; }
         adminToken = data.token;
@@ -218,12 +245,20 @@
 
     async function apiGet(url) {
       const res = await fetch(url, { headers: { Authorization: 'Bearer ' + adminToken } });
-      return res.json();
+      const data = await res.json();
+      if (!data.success && data.message && data.message.toLowerCase().includes('token')) {
+        adminLogout();
+      }
+      return data;
     }
 
     async function apiDelete(url) {
       const res = await fetch(url, { method: 'DELETE', headers: { Authorization: 'Bearer ' + adminToken } });
-      return res.json();
+      const data = await res.json();
+      if (!data.success && data.message && data.message.toLowerCase().includes('token')) {
+        adminLogout();
+      }
+      return data;
     }
 
     function statusBadge(status) {
